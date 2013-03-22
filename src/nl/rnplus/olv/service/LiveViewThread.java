@@ -6,7 +6,6 @@
  */
 package nl.rnplus.olv.service;
 
-import android.annotation.TargetApi;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -22,7 +21,6 @@ import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.BatteryManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.support.v4.app.NotificationCompat;
@@ -32,7 +30,6 @@ import nl.rnplus.olv.LiveViewPreferences;
 import nl.rnplus.olv.MainActivity;
 import nl.rnplus.olv.R;
 import nl.rnplus.olv.data.LiveViewDbConstants;
-import nl.rnplus.olv.data.LiveViewDbHelper;
 import nl.rnplus.olv.data.Prefs;
 import nl.rnplus.olv.messages.*;
 import nl.rnplus.olv.messages.calls.*;
@@ -50,7 +47,6 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.UUID;
 
-@TargetApi(17)
 public class LiveViewThread extends Thread {
 
     /* Service constants */
@@ -95,7 +91,7 @@ public class LiveViewThread extends Thread {
     private long startUpTime;
     private LiveViewService parentService;
     private BluetoothSocket clientSocket;
-    private Notification notification;
+    private final Notification notification;
 
     /* Menu variables */
     private Integer menu_state = 0;
@@ -128,56 +124,45 @@ public class LiveViewThread extends Thread {
         }
     };
 
-    @SuppressWarnings("deprecation") //To support Android 2.x the depricated notification method is still used on low pre-JellyBean devices.
 	public LiveViewThread(LiveViewService parentService) {
         super("LiveViewThread");
         this.parentService = parentService;
-        
-        int sdk = Build.VERSION.SDK_INT;
 
         //Pending intent 1: Open the mainActivity
-        Intent notificationIntent = new Intent(parentService, MainActivity.class);
-        PendingIntent pi_content = PendingIntent.getActivity(parentService, 0, notificationIntent, 0);
+        final Intent notificationIntent = new Intent(parentService, MainActivity.class);
+        final PendingIntent pi_content = PendingIntent.getActivity(parentService, 0, notificationIntent, 0);
 
         //Pending intent 2: Find the LiveView
-        Intent bci = new Intent(PLUGIN_COMMAND);
-        Bundle bcb = new Bundle();
+        final Intent bci = new Intent(PLUGIN_COMMAND);
+        final Bundle bcb = new Bundle();
         bcb.putString("command", "vibrate");
         bcb.putInt("delay", 0);
         bcb.putInt("time", 1000);
-        long time = System.currentTimeMillis();
+        final long time = System.currentTimeMillis();
         bcb.putLong("timestamp", time);
         bci.putExtras(bcb);
-        PendingIntent pi_findliveview = PendingIntent.getBroadcast(parentService, 0, bci, 0);
+        final PendingIntent pi_findliveview = PendingIntent.getBroadcast(parentService, 0, bci, 0);
 
         //Pending intent 3: Open the settings
-        Intent i_opensettings = new Intent();
+        final Intent i_opensettings = new Intent();
         i_opensettings.setClass(parentService, LiveViewPreferences.class);
-        PendingIntent pi_opensettings = PendingIntent.getActivity(parentService, 0, i_opensettings, 0);
+        final PendingIntent pi_opensettings = PendingIntent.getActivity(parentService, 0, i_opensettings, 0);
+        
+        // Create notification
+        final CharSequence contentTitle = parentService.getString(R.string.app_name);
+        final CharSequence contentText = parentService.getString(R.string.notify_service_running);
 
-        if (sdk < Build.VERSION_CODES.JELLY_BEAN) //Use deprecated notification code when running on android versions older than Jelly Bean.
-        {
-            notification = new Notification(R.drawable.icon, "LiveView connected...", System.currentTimeMillis());
-            Context context = parentService.getApplicationContext();
-            CharSequence contentTitle = parentService.getString(R.string.app_name);
-            CharSequence contentText = parentService.getString(R.string.notify_service_running);
-            notification.setLatestEventInfo(context, contentTitle, contentText, pi_content);
-        } else {
-            CharSequence contentTitle = parentService.getString(R.string.app_name);
-            CharSequence contentText = parentService.getString(R.string.notify_service_running);
-            //Bitmap icon = BitmapFactory.decodeResource(parentService.getResources(), R.drawable.olv_icon);
-            notification = new Notification.Builder(parentService.getApplicationContext())
-                    .setContentTitle(contentTitle)
-                    .setContentText(contentText)
-                    .setSmallIcon(R.drawable.ic_liveview)
-                    .setContentIntent(pi_content)
-                    .addAction(R.drawable.ic_menu_find, parentService.getString(R.string.notification_findliveview), pi_findliveview)
-                    .addAction(R.drawable.ic_menu_manage, parentService.getString(R.string.notification_settings), pi_opensettings)
-                    .setOngoing(true)
-					.setWhen(0)
-					.setPriority(Notification.PRIORITY_LOW)
-                    .build();
-        }
+        notification = new NotificationCompat.Builder(parentService.getApplicationContext())
+                .setContentTitle(contentTitle)
+                .setContentText(contentText)
+                .setSmallIcon(R.drawable.ic_liveview)
+                .setContentIntent(pi_content)
+                .addAction(R.drawable.ic_menu_find, (CharSequence)parentService.getString(R.string.notification_findliveview), pi_findliveview)
+                .addAction(R.drawable.ic_menu_manage, parentService.getString(R.string.notification_settings), pi_opensettings)
+                .setOngoing(true)
+                .setWhen(0)
+                .setPriority(Notification.PRIORITY_LOW)
+                .build();
         
         btAdapter = BluetoothAdapter.getDefaultAdapter();
 
