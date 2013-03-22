@@ -796,13 +796,19 @@ public class LiveViewThread extends Thread {
         boolean playing = amgr.isMusicActive();
         if (playing) {
             Log.d(TAG, "A song is playing.");
-            sendCall(new DisplayPanel(parentService.getMediaInfoTrack(), "Artist: " + parentService.getMediaInfoArtist() + " Album: " + parentService.getMediaInfoAlbum(), lvImage_music_pause, false));
-            //sendCall(new DisplayBitmap((byte) 34, (byte) 34, menuImage_media_isplaying));
-            //sendCall(new DisplayPanel("HEADER", "FOOTER", menuImage_media_isplaying, false));
+            StringBuilder bottomLine = new StringBuilder();
+            if (parentService.getMediaInfoArtist() != null) {
+                bottomLine.append("Artist: ");
+                bottomLine.append(parentService.getMediaInfoArtist());
+            }
+            if (parentService.getMediaInfoAlbum() != null) {
+                bottomLine.append(" Album: ");
+                bottomLine.append(parentService.getMediaInfoAlbum());
+            }
+            sendCall(new DisplayPanel(parentService.getMediaInfoTrack(), bottomLine.toString(), lvImage_music_pause, false));
         } else {
             Log.d(TAG, "Nope, there is no music playing.");
             sendCall(new DisplayPanel("There is no music playing.", "", lvImage_music_play, false));
-            //sendCall(new DisplayBitmap((byte) 34, (byte) 34, menuImage_media_isnotplaying));
         }
     }
 

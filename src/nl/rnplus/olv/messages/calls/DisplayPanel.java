@@ -36,10 +36,8 @@ public class DisplayPanel extends LiveViewCall
     {
     	try
     	{
-	        byte[] headerTextArray = headerText.getBytes("iso-8859-1");//iso-8859-1 (UTF-8 is not working)
-	    	byte[] footerTextArray = footerText.getBytes("iso-8859-1");
-	    	String unusedText = "";
-	    	byte[] unusedTextArray = unusedText.getBytes("iso-8859-1");
+	        byte[] headerTextArray = headerText == null ? new byte[0] : headerText.getBytes("iso-8859-1");//iso-8859-1 (UTF-8 is not working)
+	    	byte[] footerTextArray = footerText == null ? new byte[0] : footerText.getBytes("iso-8859-1");
 	        int size = 15 + headerTextArray.length + footerTextArray.length + image.length;
 	        ByteBuffer buffer = ByteBuffer.allocate(size);
 	        buffer.put((byte) 0);
@@ -57,8 +55,7 @@ public class DisplayPanel extends LiveViewCall
 	        buffer.put((byte) 0); //0 is for plaintext vs bitmapimage (1) strings
 	        buffer.putShort((short) headerTextArray.length); 
 	        buffer.put(headerTextArray);
-	        buffer.putShort((short) unusedTextArray.length); //Needed for the protocol...
-	        buffer.put(unusedTextArray);
+	        buffer.putShort((short) 0); //Needed for the protocol...
 	        buffer.putShort((short) footerTextArray.length); 
 	        buffer.put(footerTextArray);
 	        //buffer.putShort((short)image.length);
